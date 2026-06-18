@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Miva · Open The Door</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', sans-serif; background: #f9f9f7; color: #1a1a1a; min-height: 100vh; }
+
+.wrap  { max-width: 480px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+.d1    { max-width: 480px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+
+.eyebrow { font-size: 10px; letter-spacing: .1em; color: #bbb; margin-bottom: 10px; }
+.title   { font-size: 26px; font-weight: 500; line-height: 1.25; margin-bottom: 8px; }
+.subtitle{ font-size: 13px; color: #888; line-height: 1.8; margin-bottom: 1.5rem; }
+
+.model-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.model-chip { padding: 5px 11px; border: 0.5px solid #ddd; border-radius: 20px; font-size: 12px; cursor: pointer; background: #fff; color: #555; user-select: none; }
+.model-chip.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+.key-bar { display: flex; gap: 8px; margin-bottom: 4px; }
+.key-bar input { flex: 1; padding: 9px 12px; border: 0.5px solid #ddd; border-radius: 8px; font-size: 12px; font-family: monospace; background: #fff; outline: none; color: #555; }
+.key-bar input:focus { border-color: #999; }
+.key-hint { font-size: 11px; color: #bbb; margin-bottom: 1rem; }
+
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 12px; font-weight: 500; color: #555; margin-bottom: 5px; }
+.field input, .field textarea { width: 100%; padding: 10px 12px; border: 0.5px solid #ddd; border-radius: 8px; font-size: 13px; color: #1a1a1a; background: #fff; outline: none; font-family: inherit; resize: none; }
+.field input:focus, .field textarea:focus { border-color: #999; }
+.field input::placeholder, .field textarea::placeholder { color: #ccc; }
+
+.submit-btn { width: 100%; padding: 13px; font-size: 14px; font-weight: 500; border: none; border-radius: 10px; background: #1a1a1a; color: #fff; cursor: pointer; font-family: inherit; margin-top: 8px; }
+.submit-btn:active { opacity: .8; }
+
+.loading-wrap { text-align: center; padding: 5rem 1.5rem; }
+.loading-title { font-size: 16px; font-weight: 500; margin: 12px 0 8px; }
+.loading-sub { font-size: 12px; color: #bbb; }
+.spinner { width: 32px; height: 32px; border: 2px solid #eee; border-top-color: #1a1a1a; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.seed-card { background: #fff; border: 0.5px solid #e5e5e5; border-radius: 14px; margin-bottom: 16px; padding: 14px 16px; }
+.seed-metaphor { font-size: 14px; font-weight: 500; margin-bottom: 10px; font-family: Georgia, serif; line-height: 1.5; }
+.seed-row { margin-bottom: 6px; }
+.seed-key { font-size: 10px; color: #bbb; margin-bottom: 2px; }
+.seed-val { font-size: 13px; color: #444; line-height: 1.6; }
+
+.life-card { border-radius: 14px; margin-bottom: 12px; overflow: hidden; background: #fff; }
+.life-header { padding: 16px; display: flex; align-items: center; gap: 12px; }
+.life-badge { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.life-body { padding: 0 16px 16px; border-top: 0.5px solid #f0f0f0; }
+.life-path { font-size: 13px; color: #555; line-height: 1.7; padding: 12px 0 10px; border-bottom: 0.5px solid #f5f5f5; margin-bottom: 10px; }
+.id-row { margin-bottom: 8px; }
+.id-key { font-size: 10px; color: #bbb; margin-bottom: 2px; }
+.id-val { font-size: 13px; color: #333; line-height: 1.6; }
+.id-val.serif { font-family: Georgia, serif; }
+.enter-btn { width: 100%; margin-top: 12px; padding: 12px; font-size: 13px; font-weight: 500; border-radius: 10px; border: none; cursor: pointer; font-family: inherit; }
+
+.day-context { font-size: 13px; color: #888; line-height: 1.9; margin-bottom: 1.5rem; font-style: italic; }
+.day-scene { font-size: 15px; line-height: 1.9; color: #1a1a1a; font-family: Georgia, serif; margin-bottom: 1.75rem; white-space: pre-line; }
+.person-block { background: #fff; border: 0.5px solid #eee; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.person-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+.person-role { font-size: 11px; color: #999; margin-bottom: 6px; }
+.person-says { font-size: 13px; color: #555; line-height: 1.65; font-family: Georgia, serif; }
+.event-block { background: #fff; border: 0.5px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; margin: 1.5rem 0; }
+.event-label { font-size: 10px; color: #bbb; letter-spacing: .06em; margin-bottom: 8px; }
+.event-text { font-size: 14px; line-height: 1.8; color: #1a1a1a; font-family: Georgia, serif; white-space: pre-line; }
+.choice-section { margin-top: 1.75rem; }
+.choice-label { font-size: 11px; color: #999; margin-bottom: 12px; }
+.choice-btn { width: 100%; padding: 13px 16px; text-align: left; border: 0.5px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-family: inherit; font-size: 14px; color: #1a1a1a; margin-bottom: 8px; line-height: 1.5; }
+.choice-btn:active { background: #f5f5f5; }
+.choice-sub { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+.aftermath { margin-top: 1.5rem; padding: 16px; background: #f7f7f7; border-radius: 12px; font-size: 13px; line-height: 1.85; color: #555; font-family: Georgia, serif; white-space: pre-line; }
+.aftermath-label { font-size: 10px; color: #bbb; letter-spacing: .06em; margin-bottom: 8px; font-family: system-ui; }
+
+.away-item { padding: 14px 16px; background: #fff; border: 0.5px solid #eee; border-radius: 12px; margin-bottom: 10px; }
+.away-item.missed { opacity: .5; border-style: dashed; }
+.away-item-label { font-size: 10px; color: #bbb; letter-spacing: .06em; margin-bottom: 5px; }
+.away-item-text { font-size: 14px; color: #1a1a1a; line-height: 1.65; font-family: Georgia, serif; }
+.away-item-sub { font-size: 11px; color: #aaa; margin-top: 4px; font-style: italic; }
+
+.tl-item { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.tl-text { font-size: 13px; color: #555; line-height: 1.6; }
+.tl-day { font-size: 10px; color: #bbb; margin-bottom: 2px; }
+
+.continue-row { margin-top: 1.5rem; display: flex; gap: 8px; }
+.continue-btn { flex: 1; padding: 12px; font-size: 13px; border: none; border-radius: 10px; color: #fff; cursor: pointer; font-family: inherit; font-weight: 500; }
+.back-btn { padding: 12px 16px; font-size: 13px; border: 0.5px solid #ddd; border-radius: 10px; background: transparent; cursor: pointer; font-family: inherit; color: #888; }
+.export-btn { width: 100%; margin-top: 10px; padding: 11px; font-size: 13px; border: 0.5px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; font-family: inherit; color: #555; }
+
+.error-box { padding: 12px 14px; background: #fff5f5; border: 0.5px solid #fcc; border-radius: 10px; font-size: 13px; color: #A32D2D; line-height: 1.7; margin-top: 12px; display: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const STATE = {
+  screen: 'input', model: 'deepseek',
+  seed: null, lives: null, chosenLife: null,
+  day1: null, chosenChoice: null, aftermath: null,
+  userName: '', userInput: null,
+  worldState: null, timeline: [], dayCount: 1,
+  leftAt: null, awayResult: null,
+}
+
+const LIFE_STYLE = {
+  safe:     { color:'#185FA5', bg:'#E6F1FB' },
+  creative: { color:'#993556', bg:'#FBEAF0' },
+  risky:    { color:'#0F6E56', bg:'#E1F5EE' },
+}
+
+const MODELS = [
+  { id:'deepseek', label:'DeepSeek', hint:'api.deepseek.com → API Keys' },
+  { id:'qwen',     label:'Qwen',     hint:'dashscope.aliyuncs.com → API-KEY管理' },
+  { id:'openai',   label:'OpenAI',   hint:'platform.openai.com → API keys' },
+  { id:'claude',   label:'Claude',   hint:'console.anthropic.com → API Keys' },
+  { id:'gemini',   label:'Gemini',   hint:'aistudio.google.com → Get API key' },
+  { id:'ollama',   label:'Ollama',   hint:'本地运行，需先启动 Ollama（无需 Key）' },
+]
+
+// ── API ──────────────────────────────────────────────────────
+function getKey() {
+  const inp = document.getElementById('api-key')
+  return (inp ? inp.value.trim() : '') || localStorage.getItem('miva_key_' + STATE.model) || ''
+}
+function saveKey() {
+  const k = getKey(); if (k) localStorage.setItem('miva_key_' + STATE.model, k)
+}
+
+async function callAI(prompt, maxTokens) {
+  maxTokens = maxTokens || 4000
+  const key = getKey(), m = STATE.model
+  if (m !== 'ollama' && !key) throw new Error('请先填入 API Key')
+  let url, headers, body
+  if (m === 'deepseek') {
+    url = 'https://api.deepseek.com/chat/completions'
+    headers = {'Content-Type':'application/json','Authorization':'Bearer '+key}
+    body = {model:'deepseek-chat',messages:[{role:'user',content:prompt}],max_tokens:maxTokens,temperature:0.88}
+  } else if (m === 'qwen') {
+    url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+    headers = {'Content-Type':'application/json','Authorization':'Bearer '+key}
+    body = {model:'qwen-plus',messages:[{role:'user',content:prompt}],max_tokens:maxTokens,temperature:0.88}
+  } else if (m === 'openai') {
+    url = 'https://api.openai.com/v1/chat/completions'
+    headers = {'Content-Type':'application/json','Authorization':'Bearer '+key}
+    body = {model:'gpt-4o',messages:[{role:'user',content:prompt}],max_tokens:maxTokens,temperature:0.88}
+  } else if (m === 'claude') {
+    url = 'https://api.anthropic.com/v1/messages'
+    headers = {'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}
+    body = {model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]}
+  } else if (m === 'gemini') {
+    url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key
+    headers = {'Content-Type':'application/json'}
+    body = {contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxTokens,temperature:0.88}}
+  } else if (m === 'ollama') {
+    url = 'http://localhost:11434/api/chat'
+    headers = {'Content-Type':'application/json'}
+    body = {model:'llama3',messages:[{role:'user',content:prompt}],stream:false}
+  }
+  const r = await fetch(url, {method:'POST',headers:headers,body:JSON.stringify(body)})
+  if (!r.ok) { const t = await r.text().catch(()=>''); throw new Error('API错误 '+r.status+'：'+t.slice(0,150)) }
+  const d = await r.json()
+  let raw = ''
+  if (m==='claude')      raw = d.content?.[0]?.text || ''
+  else if (m==='gemini') raw = d.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  else if (m==='ollama') raw = d.message?.content || ''
+  else                   raw = d.choices?.[0]?.message?.content || ''
+  const clean = raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim()
+  try { return JSON.parse(clean) }
+  catch(e) { throw new Error('返回格式异常，请重试\n\n' + clean.slice(0,200)) }
+}
+
+// ── Prompts ──────────────────────────────────────────────────
+function pSeed(u) {
+  return '你是 Miva 的 Life Seed Engine。根据用户回答完成两件事：\n1. 提取人生种子\n2. 识别人生命题——这个人的故事，反复在问什么问题？\n\n命题要求：必须是一个问句；去掉所有专有名词仍然成立；不是答案，是这个人生一直在问的问题。\n从具体事件→关系→模式→命题逐层提炼。\n\n用户：'+u.name+'，'+u.age+'岁\n如果当年：'+u.whatIf+'\n最害怕：'+u.fear+'\n想做未做：'+u.undone+'\n家庭：'+u.family+'\n\n严格返回JSON不要其他文字：\n{"core_trait":"核心人格一句话","core_fear":"核心恐惧","core_desire":"核心渴望","core_tension":"内心张力","seed_metaphor":"自然意象描述种子一两句","life_proposition":"这个人生反复在问的那个问题，一句话问句，去掉名字仍成立"}'
+}
+
+function pLives(seed, u) {
+  return '你是 Miva 的 Identity Engine。基于这颗种子生成三条人生。\n\n种子主人：'+u.name+'\n核心人格：'+seed.core_trait+'\n核心恐惧：'+seed.core_fear+'\n核心渴望：'+seed.core_desire+'\n核心张力：'+seed.core_tension+'\n【幕后命题，不得出现在输出文字里】：'+seed.life_proposition+'\n\n重要：三条路是同一个命题的三种不同回答。\n\n严格返回JSON不要其他文字：\n{"lives":[{"id":"safe","label":"Life A","name":"The Safe Road","subtitle":"稳定路线","path":"两三句话","identity":{"believes":"","fears":"","self":"带引号的话"}},{"id":"creative","label":"Life B","name":"The Creative Road","subtitle":"创造路线","path":"","identity":{"believes":"","fears":"","self":""}},{"id":"risky","label":"Life C","name":"The Risky Road","subtitle":"冒险路线","path":"","identity":{"believes":"","fears":"","self":""}}]}'
+}
+
+function pDay1(seed, life, u) {
+  return '你是 Miva 的 Life Experience Engine。生成用户进入这个人生的第一天。\n\n种子主人：'+u.name+'\n核心人格：'+seed.core_trait+'\n核心恐惧：'+seed.core_fear+'\n核心渴望：'+seed.core_desire+'\n【幕后命题，不得出现在输出文字里，但今天的事件要与命题正面碰撞】：'+seed.life_proposition+'\n\n她选择的人生：'+life.name+'（'+life.subtitle+'）\n人生路径：'+life.path+'\n\n要求：具体场景（时间地点气味声音细节）；三个人物（挑战者/理解者/未知，各有名字+角色+今天说的一句话）；一个与命题碰撞的事件；两个真实两难的选择。\n语言：中文，现在时。严格返回JSON不要其他文字：\n{"context":"2-3句交代时间地点状态","scene":"3-5句现在时场景有感官细节","people":[{"name":"","role":"挑战者","description":"","says":""},{"name":"","role":"理解者","description":"","says":""},{"name":"","role":"未知","description":"","says":""}],"event":{"label":"","text":"3-4句现在时"},"choices":[{"text":"","sub":""},{"text":"","sub":""}]}'
+}
+
+function pAftermath(seed, life, day1, idx, u) {
+  const c = day1.choices[idx]
+  return '你是 Miva 的 Life Experience Engine。用户做出了选择，生成选择之后立即发生的事。\n\n种子主人：'+u.name+'\n核心人格：'+seed.core_trait+'\n核心恐惧：'+seed.core_fear+'\n【幕后命题，选择的后果要推进命题，但不要说出来】：'+seed.life_proposition+'\n\n她的人生：'+life.name+'\n事件：'+day1.event.text+'\n她的选择：'+c.text+'（'+c.sub+'）\n\n生成2-3段反应（外部立即反应/内心真实感受第一人称/今天结束前的悬念），语言中文现在时。严格返回JSON：\n{"aftermath":"2-3段用\\n\\n分隔","day_end":"睡前最后一个念头带引号"}'
+}
+
+function pWorldState(seed, life, day1, choice, aftermath, u) {
+  return '你是 Miva 的 World State Engine。提取当前世界状态快照。\n\n种子主人：'+u.name+'\nDay '+STATE.dayCount+'场景：'+day1.scene+'\n她的选择：'+choice.text+'\n选择后：'+aftermath.aftermath+'\n【幕后命题】：'+seed.life_proposition+'\n\n严格返回JSON：\n{"people":[{"name":"","status":"此刻状态一句话","relationship":"与主角关系","pending":"悬而未决的事"}],"open_tension":"当前最大悬念一句话","opportunity":{"exists":true,"text":"潜在机会","expires_in":"short/medium/never"},"protagonist_mood":"主角此刻内心状态一句话"}'
+}
+
+function pWhileAway(seed, life, ws, mins, u) {
+  const td = mins < 60 ? mins+'分钟' : mins < 1440 ? Math.round(mins/60)+'小时' : Math.round(mins/1440)+'天'
+  return '你是 Miva 的 Life Continuation Engine。用户离开了'+td+'，世界没有停止。\n\n人物：'+u.name+'，Day '+STATE.dayCount+'\n人生：'+life.name+'\n悬念：'+ws.open_tension+'\n主角状态：'+ws.protagonist_mood+'\n人物：'+ws.people.map(function(p){return p.name+': '+p.status}).join('；')+'\n【幕后命题，世界变化要推进命题但不说出来】：'+seed.life_proposition+'\n\n离开'+td+'，生成2-4件真正发生的事（短<2h小变化，中2-24h明显进展，长>24h重要事件部分机会消失）。\n严格返回JSON：\n{"changes":[{"text":"发生的事具体有名字","missed":false},{"text":"错过的机会","missed":true}],"day_end_thought":"昨夜最后一个念头带引号","new_day_number":'+(STATE.dayCount+1)+'}'
+}
+
+function pDayN(seed, life, ws, away, u) {
+  return '你是 Miva 的 Life Experience Engine。生成 Day '+away.new_day_number+'。\n\n人物：'+u.name+'\n人生：'+life.name+'\n悬念：'+ws.open_tension+'\n主角状态：'+ws.protagonist_mood+'\n期间发生：'+away.changes.filter(function(c){return !c.missed}).map(function(c){return c.text}).join('；')+'\n【幕后命题，今天的事件继续推进命题但不说出来】：'+seed.life_proposition+'\n\n要求：直接承接昨天，不重置；有一个新具体事件；两个真实两难选择。\n严格返回JSON：\n{"context":"Day '+away.new_day_number+'，承接昨天……","scene":"现在时有感官细节","event":{"label":"","text":"3-4句现在时"},"choices":[{"text":"","sub":""},{"text":"","sub":""}]}'
+}
+
+// ── Persistence ──────────────────────────────────────────────
+function saveWorld() {
+  localStorage.setItem('miva_world', JSON.stringify({
+    seed:STATE.seed, lives:STATE.lives, chosenLife:STATE.chosenLife,
+    userInput:STATE.userInput, userName:STATE.userName,
+    worldState:STATE.worldState, timeline:STATE.timeline,
+    dayCount:STATE.dayCount, leftAt:Date.now(),
+    day1:STATE.day1, chosenChoice:STATE.chosenChoice, aftermath:STATE.aftermath,
+    model:STATE.model,
+  }))
+}
+function loadWorld() { try { return JSON.parse(localStorage.getItem('miva_world')||'null') } catch(e) { return null } }
+function pushTimeline(ev) { STATE.timeline.push(Object.assign({day:STATE.dayCount,ts:Date.now()},ev)) }
+
+// ── Utils ─────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+// ── Render ────────────────────────────────────────────────────
+function render() {
+  var root = document.getElementById('root'); if (!root) return
+  var s = STATE.screen
+  if (s==='input')       { root.innerHTML = rInput(); restoreInputs(); return }
+  if (s==='loading')     { root.innerHTML = rLoading(); return }
+  if (s==='lives')       { root.innerHTML = rLives(); return }
+  if (s==='day1'||s==='day-n') { root.innerHTML = rDay(); return }
+  if (s==='choice-done') { root.innerHTML = rChoiceDone(); return }
+  if (s==='returning')   { root.innerHTML = rReturning(); return }
+}
+
+function rInput() {
+  var world = loadWorld(), hasWorld = world && world.chosenLife
+  return '<div class="wrap"><div class="eyebrow">MIVA · PROTOTYPE 04 · OPEN THE DOOR</div><div class="title">推开那扇门</div><div class="subtitle">回答六个问题。看见三个可能的自己。然后走进去。</div><div style="font-size:11px;color:#bbb;margin-bottom:6px">选择模型</div><div class="model-row">'+MODELS.map(function(m){return '<div class="model-chip'+(STATE.model===m.id?' active':'')+'" onclick="selectModel(\''+m.id+'\')">'+m.label+'</div>'}).join('')+'</div><div class="key-bar"><input type="password" id="api-key" placeholder="'+(STATE.model==='ollama'?'Ollama 无需 Key':'API Key')+'" autocomplete="off"'+(STATE.model==='ollama'?' disabled':'')+' /></div><div class="key-hint" id="key-hint">'+esc(MODELS.find(function(m){return m.id===STATE.model}).hint)+'</div><div class="field"><label>你叫什么</label><input id="f-name" placeholder="名字或称呼" /></div><div class="field"><label>你现在多大</label><input id="f-age" placeholder="比如：28" /></div><div class="field"><label>那个"如果当年……"的念头</label><textarea id="f-whatif" rows="2" placeholder="如果当年没有放弃……"></textarea></div><div class="field"><label>你最害怕的事</label><textarea id="f-fear" rows="2" placeholder="最深层的那种害怕"></textarea></div><div class="field"><label>一直想做但没做的事</label><textarea id="f-undone" rows="2" placeholder="那件一直搁着的事"></textarea></div><div class="field"><label>家庭背景（一句话）</label><input id="f-family" placeholder="比如：单亲家庭，母亲独自抚养" /></div><button class="submit-btn" onclick="handleSubmit()">开始 →</button><div class="error-box" id="err"></div>'+(hasWorld?'<div style="margin-top:20px;padding:14px 16px;background:#fff;border:0.5px solid #eee;border-radius:12px"><div style="font-size:11px;color:#bbb;margin-bottom:6px">上次的人生还在</div><div style="font-size:13px;color:#1a1a1a;margin-bottom:10px">'+esc(world.chosenLife.name)+' · Day '+world.dayCount+'</div><button class="submit-btn" style="background:#f5f5f5;color:#1a1a1a" onclick="continueWorld()">继续这条人生 →</button></div>':'')+'</div>'
+}
+
+function rLoading() {
+  return '<div class="loading-wrap"><div class="spinner"></div><div class="loading-title" id="loading-text">正在生成……</div><div class="loading-sub">通常需要 20–40 秒</div></div>'
+}
+
+function rLives() {
+  var seed=STATE.seed, lives=STATE.lives, userName=STATE.userName
+  return '<div class="wrap"><div class="eyebrow">MIVA · 三条人生</div><div class="title">'+esc(userName)+'的种子</div><div class="seed-card"><div class="seed-metaphor">'+esc(seed.seed_metaphor)+'</div>'+[['核心人格',seed.core_trait],['核心渴望',seed.core_desire],['核心恐惧',seed.core_fear]].map(function(kv){return '<div class="seed-row"><div class="seed-key">'+kv[0]+'</div><div class="seed-val">'+esc(kv[1])+'</div></div>'}).join('')+'</div><div class="subtitle" style="margin-bottom:1rem">三条路摆在面前。选一条，走进去。</div>'+lives.map(function(life){var st=LIFE_STYLE[life.id]||{color:'#555',bg:'#f0f0f0'};return '<div class="life-card" style="border:0.5px solid '+st.color+'44"><div class="life-header"><div class="life-badge" style="background:'+st.bg+';color:'+st.color+'">'+esc(life.label)+'</div><div><div style="font-size:14px;font-weight:500">'+esc(life.name)+'</div><div style="font-size:12px;color:#999;margin-top:2px">'+esc(life.subtitle)+'</div></div></div><div class="life-body"><div class="life-path">'+esc(life.path)+'</div>'+[['她相信',life.identity.believes],['她害怕',life.identity.fears],['她说',life.identity.self]].map(function(kv){return '<div class="id-row"><div class="id-key">'+kv[0]+'</div><div class="id-val'+(kv[0]==='她说'?' serif':'')+'">'+esc(kv[1])+'</div></div>'}).join('')+'<button class="enter-btn" style="background:'+st.color+';color:#fff" onclick="enterLife(\''+life.id+'\')">进入这条人生 →</button></div></div>'}).join('')+'<button class="back-btn" style="margin-top:8px" onclick="goToInput()">← 重新填写</button></div>'
+}
+
+function rDay() {
+  var day1=STATE.day1, chosenLife=STATE.chosenLife, dayCount=STATE.dayCount
+  var st=LIFE_STYLE[chosenLife.id]||{color:'#555',bg:'#f0f0f0'}
+  var rl={'挑战者':'挑战你的人','理解者':'理解你的人','未知':'还不确定的人'}
+  var people=''
+  if (day1.people && day1.people.length) {
+    people='<div style="font-size:11px;color:#bbb;letter-spacing:.06em;margin-bottom:10px">今天遇见的人</div>'+day1.people.map(function(p){return '<div class="person-block"><div class="person-name">'+esc(p.name)+'</div><div class="person-role">'+esc(rl[p.role]||p.role)+' · '+esc(p.description)+'</div><div class="person-says">'+esc(p.says)+'</div></div>'}).join('')
+  }
+  return '<div class="d1"><div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+' · Day '+dayCount+'</div><div class="day-context">'+esc(day1.context)+'</div><div class="day-scene">'+esc(day1.scene)+'</div>'+people+'<div class="event-block"><div class="event-label">'+esc(day1.event.label)+'</div><div class="event-text">'+esc(day1.event.text)+'</div></div><div class="choice-section"><div class="choice-label">你会怎么做？</div>'+day1.choices.map(function(c,i){return '<button class="choice-btn" onclick="makeChoice('+i+')">'+esc(c.text)+'<div class="choice-sub">'+esc(c.sub)+'</div></button>'}).join('')+'</div><button class="back-btn" style="margin-top:12px" onclick="goBack()">← 换一条路</button></div>'
+}
+
+function rChoiceDone() {
+  var day1=STATE.day1, chosenLife=STATE.chosenLife, chosenChoice=STATE.chosenChoice, aftermath=STATE.aftermath, dayCount=STATE.dayCount
+  var st=LIFE_STYLE[chosenLife.id]||{color:'#555',bg:'#f0f0f0'}
+  var choice=day1.choices[chosenChoice]
+  return '<div class="d1"><div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+' · Day '+dayCount+' · 选择已做出</div><div style="font-size:15px;font-weight:500;margin:8px 0 16px;font-family:Georgia,serif">'+esc(choice.text)+'</div><div class="aftermath"><div class="aftermath-label">接下来发生的事</div>'+esc(aftermath.aftermath)+'</div><div style="margin-top:16px;padding:14px 16px;background:#fff;border:0.5px solid '+st.color+'33;border-radius:12px"><div style="font-size:10px;color:#bbb;margin-bottom:6px;letter-spacing:.06em">今天结束时，她脑子里的最后一个念头</div><div style="font-size:14px;color:#1a1a1a;font-family:Georgia,serif;line-height:1.7">'+esc(aftermath.day_end)+'</div></div><div class="continue-row"><button class="continue-btn" style="background:'+st.color+'" onclick="leaveAndSave()">明天继续 →</button><button class="back-btn" onclick="goBack()">换一条路 ↩</button></div><button class="export-btn" onclick="exportPDF()">📄 导出这段人生</button></div>'
+}
+
+function rReturning() {
+  var awayResult=STATE.awayResult, chosenLife=STATE.chosenLife, timeline=STATE.timeline
+  var st=LIFE_STYLE[chosenLife.id]||{color:'#555',bg:'#f0f0f0'}
+  var world=loadWorld(), minsGone=world&&world.leftAt?Math.round((Date.now()-world.leftAt)/60000):0
+  var td=minsGone<60?'离开了'+minsGone+'分钟':minsGone<1440?'离开了'+Math.round(minsGone/60)+'小时':'离开了'+Math.round(minsGone/1440)+'天'
+  var happened=awayResult.changes.filter(function(c){return !c.missed})
+  var missed=awayResult.changes.filter(function(c){return c.missed})
+  var tlHtml=''
+  if (timeline.length>=1) { tlHtml='<div style="margin-top:2rem"><div style="font-size:10px;color:#bbb;letter-spacing:.08em;margin-bottom:12px">人生时间线</div>'+timeline.slice().reverse().map(function(e){return '<div class="tl-item"><div class="tl-dot" style="background:'+(e.missed?'#ddd':st.color)+'"></div><div class="tl-text"><div class="tl-day">Day '+e.day+'</div>'+esc(e.text)+'</div></div>'}).join('')+'</div>' }
+  return '<div class="d1"><div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+'</div><div style="font-size:11px;color:#bbb;margin-bottom:6px">'+td+'</div><div style="font-size:22px;font-weight:500;line-height:1.3;margin-bottom:1.5rem">你不在的时候，<br>发生了一些事。</div>'+happened.map(function(c){return '<div class="away-item"><div class="away-item-label">发生了</div><div class="away-item-text">'+esc(c.text)+'</div></div>'}).join('')+missed.map(function(c){return '<div class="away-item missed"><div class="away-item-label">错过了</div><div class="away-item-text">'+esc(c.text)+'</div><div class="away-item-sub">这件事不会再回来了。</div></div>'}).join('')+(awayResult.day_end_thought?'<div style="margin-top:1.5rem;padding:14px 16px;background:#fff;border:0.5px solid '+st.color+'33;border-radius:12px"><div style="font-size:10px;color:#bbb;margin-bottom:6px;letter-spacing:.06em">昨夜睡前，她想的最后一件事</div><div style="font-size:14px;color:#1a1a1a;font-family:Georgia,serif;line-height:1.7">'+esc(awayResult.day_end_thought)+'</div></div>':'')+tlHtml+'<div class="continue-row"><button class="continue-btn" style="background:'+st.color+'" onclick="enterDayN()">进入 Day '+awayResult.new_day_number+' →</button><button class="back-btn" onclick="goBack()">换一条路 ↩</button></div><button class="export-btn" onclick="exportPDF()">📄 导出这段人生</button></div>'
+}
+
+// ── Export ────────────────────────────────────────────────────
+function exportPDF() {
+  var seed=STATE.seed, chosenLife=STATE.chosenLife, userName=STATE.userName
+  var day1=STATE.day1, aftermath=STATE.aftermath, timeline=STATE.timeline
+  var dayCount=STATE.dayCount, awayResult=STATE.awayResult
+  if (!seed||!chosenLife){alert('还没有可导出的内容');return}
+  var st=LIFE_STYLE[chosenLife.id]||{color:'#555',bg:'#f0f0f0'}
+  var tl=timeline.map(function(e){return '<div style="display:flex;gap:10px;margin-bottom:12px"><div style="width:8px;height:8px;border-radius:50%;background:'+(e.missed?'#ddd':st.color)+';flex-shrink:0;margin-top:5px"></div><div><div style="font-size:10px;color:#bbb;margin-bottom:2px">Day '+e.day+'</div><div style="font-size:13px;color:#444">'+esc(e.text)+'</div></div></div>'}).join('')
+  var awaySec=awayResult?'<div style="margin-top:24px"><div style="font-size:10px;letter-spacing:.08em;color:#bbb;margin-bottom:12px">当你离开的时候</div>'+awayResult.changes.map(function(c){return '<div style="padding:12px 14px;border:0.5px solid '+(c.missed?'#ddd':'#eee')+';border-style:'+(c.missed?'dashed':'solid')+';border-radius:10px;margin-bottom:8px;opacity:'+(c.missed?'0.5':'1')+'"><div style="font-size:10px;color:#bbb;margin-bottom:4px">'+(c.missed?'错过了':'发生了')+'</div><div style="font-size:13px;color:#1a1a1a;font-family:Georgia,serif">'+esc(c.text)+'</div>'+(c.missed?'<div style="font-size:11px;color:#aaa;margin-top:3px;font-style:italic">这件事不会再回来了。</div>':'')+'</div>'}).join('')+'</div>':''
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Miva · '+esc(userName)+' · '+esc(chosenLife.name)+'</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#fff;color:#1a1a1a;padding:3rem 2rem;max-width:640px;margin:0 auto}@media print{.no-print{display:none}}</style></head><body>'
+  +'<div style="font-size:10px;letter-spacing:.1em;color:#bbb;margin-bottom:8px">MIVA · PROTOTYPE 04</div>'
+  +'<div style="font-size:28px;font-weight:500;margin-bottom:4px">'+esc(userName)+'</div>'
+  +'<div style="font-size:13px;color:#888;margin-bottom:2rem">'+esc(chosenLife.name)+' · 共 '+dayCount+' 天</div>'
+  +'<div style="background:#f9f9f7;border-radius:14px;padding:16px 18px;margin-bottom:24px"><div style="font-size:10px;color:#bbb;margin-bottom:8px;letter-spacing:.06em">人生种子</div><div style="font-size:14px;font-weight:500;margin-bottom:12px;font-family:Georgia,serif">'+esc(seed.seed_metaphor)+'</div><div style="font-size:12px;color:#888;margin-bottom:4px">核心人格</div><div style="font-size:13px;color:#444;margin-bottom:10px">'+esc(seed.core_trait)+'</div><div style="font-size:12px;color:#888;margin-bottom:4px">核心渴望</div><div style="font-size:13px;color:#444;margin-bottom:10px">'+esc(seed.core_desire)+'</div><div style="font-size:12px;color:#888;margin-bottom:4px">核心恐惧</div><div style="font-size:13px;color:#444">'+esc(seed.core_fear)+'</div></div>'
+  +'<div style="background:#f9f9f7;border-radius:14px;padding:16px 18px;margin-bottom:24px"><div style="font-size:10px;color:#bbb;margin-bottom:8px;letter-spacing:.06em">你选择的人生</div><div style="font-size:16px;font-weight:500;margin-bottom:4px">'+esc(chosenLife.name)+'</div><div style="font-size:12px;color:#999;margin-bottom:10px">'+esc(chosenLife.subtitle)+'</div><div style="font-size:13px;color:#555;line-height:1.7">'+esc(chosenLife.path)+'</div></div>'
+  +(day1?'<div style="background:#f9f9f7;border-radius:14px;padding:16px 18px;margin-bottom:24px"><div style="font-size:10px;color:#bbb;margin-bottom:8px;letter-spacing:.06em">Day 1</div><div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px;line-height:1.7">'+esc(day1.context)+'</div><div style="font-size:14px;font-family:Georgia,serif;line-height:1.85;white-space:pre-line">'+esc(day1.scene)+'</div>'+(day1.event?'<div style="margin-top:16px;padding:12px 14px;background:#fff;border-radius:10px"><div style="font-size:10px;color:#bbb;margin-bottom:6px">'+esc(day1.event.label)+'</div><div style="font-size:13px;font-family:Georgia,serif;line-height:1.7">'+esc(day1.event.text)+'</div></div>':'')+'</div>':'')
+  +(aftermath?'<div style="background:#f9f9f7;border-radius:14px;padding:16px 18px;margin-bottom:24px"><div style="font-size:10px;color:#bbb;margin-bottom:8px;letter-spacing:.06em">她的选择与之后</div><div style="font-size:13px;font-family:Georgia,serif;line-height:1.85;white-space:pre-line;color:#555">'+esc(aftermath.aftermath)+'</div><div style="margin-top:14px;padding:12px 14px;background:#fff;border-left:3px solid '+st.color+';border-radius:0 8px 8px 0"><div style="font-size:13px;font-family:Georgia,serif;color:#1a1a1a;line-height:1.6">'+esc(aftermath.day_end)+'</div></div></div>':'')
+  +awaySec
+  +(tl?'<div style="margin-top:24px"><div style="font-size:10px;letter-spacing:.08em;color:#bbb;margin-bottom:12px">人生时间线</div>'+tl+'</div>':'')
+  +'<div style="margin-top:3rem;padding-top:1.5rem;border-top:0.5px solid #eee;font-size:11px;color:#bbb">生成于 '+new Date().toLocaleDateString('zh-CN')+' · Miva Prototype 04</div>'
+  +'<div class="no-print" style="margin-top:2rem;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">打印 / 保存为 PDF</button></div>'
+  +'</body></html>'
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'})
+  var url=URL.createObjectURL(blob)
+  var a=document.createElement('a'); a.href=url; a.download='Miva_'+userName+'_Day'+dayCount+'.html'; a.click(); URL.revokeObjectURL(url)
+}
+
+// ── Actions ───────────────────────────────────────────────────
+function selectModel(id) { STATE.model=id; render() }
+
+function restoreInputs() {
+  var saved=localStorage.getItem('miva_key_'+STATE.model)
+  var ki=document.getElementById('api-key'); if (ki&&saved) ki.value=saved
+  var sf=localStorage.getItem('miva_form')
+  if (sf) { try { var u=JSON.parse(sf); [['f-name','name'],['f-age','age'],['f-whatif','whatif'],['f-fear','fear'],['f-undone','undone'],['f-family','family']].forEach(function(p){var el=document.getElementById(p[0]); if(el&&u[p[1]])el.value=u[p[1]]}) } catch(e){} }
+}
+
+async function handleSubmit() {
+  saveKey()
+  var u={
+    name:document.getElementById('f-name')?.value?.trim(),
+    age:document.getElementById('f-age')?.value?.trim(),
+    whatIf:document.getElementById('f-whatif')?.value?.trim(),
+    fear:document.getElementById('f-fear')?.value?.trim(),
+    undone:document.getElementById('f-undone')?.value?.trim(),
+    family:document.getElementById('f-family')?.value?.trim(),
+  }
+  if (STATE.model!=='ollama'&&!getKey()){showErr('请先填入 API Key');return}
+  if (Object.values(u).some(function(v){return !v})){showErr('请填写全部六个问题');return}
+  localStorage.setItem('miva_form',JSON.stringify({name:u.name,age:u.age,whatif:u.whatIf,fear:u.fear,undone:u.undone,family:u.family}))
+  STATE.userInput=u; STATE.userName=u.name; STATE.timeline=[]; STATE.dayCount=1
+  STATE.screen='loading'; render()
+  try {
+    setLoadingText('正在提取你的人生种子……')
+    STATE.seed=await callAI(pSeed(u),1000)
+    setLoadingText('种子已提取，正在生成三条人生……')
+    STATE.lives=(await callAI(pLives(STATE.seed,u),3000)).lives
+    STATE.screen='lives'; render()
+  } catch(e) { STATE.screen='input'; render(); setTimeout(function(){showErr(e.message)},100) }
+}
+
+async function enterLife(lifeId) {
+  var life=STATE.lives.find(function(l){return l.id===lifeId}); if(!life) return
+  STATE.chosenLife=life; STATE.screen='loading'; render()
+  try {
+    setLoadingText('正在生成第一天……')
+    STATE.day1=await callAI(pDay1(STATE.seed,life,STATE.userInput),2500)
+    STATE.dayCount=1; STATE.screen='day1'; render(); window.scrollTo(0,0)
+  } catch(e) { STATE.screen='lives'; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+async function makeChoice(idx) {
+  STATE.chosenChoice=idx; var prev=STATE.screen; STATE.screen='loading'; render()
+  try {
+    setLoadingText('她做出了选择……')
+    var result=await callAI(pAftermath(STATE.seed,STATE.chosenLife,STATE.day1,idx,STATE.userInput),1500)
+    STATE.aftermath=result
+    if (prev==='day-n') {
+      var choice=STATE.day1.choices[idx]; setLoadingText('保存这个世界……')
+      STATE.worldState=await callAI(pWorldState(STATE.seed,STATE.chosenLife,STATE.day1,choice,result,STATE.userInput),1200)
+      pushTimeline({text:choice.text,missed:false}); STATE.leftAt=Date.now(); saveWorld()
+      await returnToWorld()
+    } else { STATE.screen='choice-done'; render(); window.scrollTo(0,0) }
+  } catch(e) { STATE.screen=prev; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+async function leaveAndSave() {
+  var choice=STATE.day1.choices[STATE.chosenChoice]; STATE.screen='loading'; render()
+  try {
+    setLoadingText('保存这个世界……')
+    STATE.worldState=await callAI(pWorldState(STATE.seed,STATE.chosenLife,STATE.day1,choice,STATE.aftermath,STATE.userInput),1200)
+    pushTimeline({text:choice.text,missed:false}); STATE.leftAt=Date.now(); saveWorld()
+    await returnToWorld()
+  } catch(e) { STATE.screen='choice-done'; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+async function returnToWorld() {
+  var world=loadWorld(); if(!world){STATE.screen='lives';render();return}
+  Object.assign(STATE,{seed:world.seed,lives:world.lives,chosenLife:world.chosenLife,userInput:world.userInput,userName:world.userName,worldState:world.worldState,timeline:world.timeline||[],dayCount:world.dayCount||1,leftAt:world.leftAt,day1:world.day1,chosenChoice:world.chosenChoice,aftermath:world.aftermath,model:world.model||STATE.model})
+  var minsGone=Math.round((Date.now()-world.leftAt)/60000)
+  STATE.screen='loading'; render()
+  try {
+    setLoadingText('世界在你离开后继续……')
+    STATE.awayResult=await callAI(pWhileAway(STATE.seed,STATE.chosenLife,STATE.worldState,minsGone,STATE.userInput),1500)
+    STATE.screen='returning'; render(); window.scrollTo(0,0)
+  } catch(e) { STATE.screen='choice-done'; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+async function continueWorld() { await returnToWorld() }
+
+async function enterDayN() {
+  STATE.screen='loading'; render()
+  try {
+    setLoadingText('进入 Day '+STATE.awayResult.new_day_number+'……')
+    STATE.day1=await callAI(pDayN(STATE.seed,STATE.chosenLife,STATE.worldState,STATE.awayResult,STATE.userInput),2000)
+    STATE.dayCount=STATE.awayResult.new_day_number; STATE.screen='day-n'; saveWorld(); render(); window.scrollTo(0,0)
+  } catch(e) { STATE.screen='returning'; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+function goBack() {
+  STATE.screen='lives'; STATE.chosenLife=null; STATE.day1=null; STATE.chosenChoice=null
+  STATE.aftermath=null; STATE.dayCount=1; STATE.worldState=null; STATE.awayResult=null
+  render(); window.scrollTo(0,0)
+}
+function goToInput() { STATE.screen='input'; render() }
+function showErr(msg) { var el=document.getElementById('err'); if(el){el.style.display='block';el.textContent=msg} }
+function setLoadingText(t) { var el=document.getElementById('loading-text'); if(el)el.textContent=t }
+
+render()
+</script>
+</body>
+</html>
