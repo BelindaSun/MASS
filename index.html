@@ -97,12 +97,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans
 <div id="root"></div>
 <script>
 const STATE = {
-  screen: 'input', model: 'deepseek',
+  screen: 'input', model: 'deepseek', // +ending
   seed: null, lives: null, chosenLife: null,
   day1: null, chosenChoice: null, aftermath: null,
   userName: '', userInput: null,
   worldState: null, timeline: [], dayCount: 1,
-  leftAt: null, awayResult: null,
+  leftAt: null, awayResult: null, endingData: null,
 }
 
 const LIFE_STYLE = {
@@ -190,6 +190,14 @@ function pAftermath(seed, life, day1, idx, u) {
   return '你是 Miva 的 Life Experience Engine。用户做出了选择，生成选择之后立即发生的事。\n\n种子主人：'+u.name+'\n核心人格：'+seed.core_trait+'\n核心恐惧：'+seed.core_fear+'\n【幕后命题，选择的后果要推进命题，但不要说出来】：'+seed.life_proposition+'\n\n她的人生：'+life.name+'\n事件：'+day1.event.text+'\n她的选择：'+c.text+'（'+c.sub+'）\n\n生成2-3段反应（外部立即反应/内心真实感受第一人称/今天结束前的悬念），语言中文现在时。严格返回JSON：\n{"aftermath":"2-3段用\\n\\n分隔","day_end":"睡前最后一个念头带引号"}'
 }
 
+function pDay7(seed, life, ws, away, u) {
+  return '你是 Miva 的 Life Experience Engine。这是最后一天——Day 7。\n\n人物：'+u.name+'\n人生：'+life.name+'\n这7天的命题一直在问：'+seed.life_proposition+'\n世界悬念：'+ws.open_tension+'\n主角状态：'+ws.protagonist_mood+'\n\n今天是命题的最终碰撞日。\n要求：\n1. 今天的场景和事件，必须让命题无法回避，必须做出最终的选择\n2. 两个选择，代表命题的两种不同答案——不是好坏之分，是两种不同的人生\n3. 场景要有终结感，像一部小说的最后一章\n\n严格返回JSON：\n{"context":"Day 7，今天是……","scene":"有终结感的场景，现在时，有细节","event":{"label":"最终时刻","text":"3-4句，命题在今天正面到来"},"choices":[{"text":"第一种答案","sub":"选择这个意味着她成为……"},{"text":"第二种答案","sub":"选择这个意味着她成为……"}]}'
+}
+
+function pEnding(seed, life, allChoices, finalChoice, u) {
+  return '你是 Miva 的 Life Ending Engine。根据这7天的选择，生成这个人最终成为了什么样的人。\n\n种子主人：'+u.name+'\n人生：'+life.name+'\n这7天一直在回答的命题：'+seed.life_proposition+'\n核心人格：'+seed.core_trait+'\n核心恐惧：'+seed.core_fear+'\n核心渴望：'+seed.core_desire+'\n\n她这7天做的选择：\n'+allChoices.map(function(c,i){return 'Day '+(i+1)+'：'+c}).join('\n')+'\n最后一天的选择：'+finalChoice+'\n\n生成这条人生的结局：\n1. 她最终成为了什么样的人（具体的，不是抽象的，有细节有场景）\n2. 命题最终的答案——她用这7天的选择，给出了什么答案（不要直接说出命题，让读者自己感受）\n3. 一句话，她余生的心安之处\n4. 如果她回头看这7天，她会对当初的自己说什么\n\n语言：中文，有温度，像一部短篇小说的结尾。严格返回JSON：\n{"ending_scene":"她最终成为的样子，2-3段，有具体细节和场景，用现在时","proposition_answer":"命题在这条人生里的答案，不说出命题本身，用她的故事来回答，1-2段","peace":"她余生的心安之处，一句话","letter":"她对7天前的自己说的话，带引号，真实有温度"}'
+}
+
 function pWorldState(seed, life, day1, choice, aftermath, u) {
   return '你是 Miva 的 World State Engine。提取当前世界状态快照。\n\n种子主人：'+u.name+'\nDay '+STATE.dayCount+'场景：'+day1.scene+'\n她的选择：'+choice.text+'\n选择后：'+aftermath.aftermath+'\n【幕后命题】：'+seed.life_proposition+'\n\n严格返回JSON：\n{"people":[{"name":"","status":"此刻状态一句话","relationship":"与主角关系","pending":"悬而未决的事"}],"open_tension":"当前最大悬念一句话","opportunity":{"exists":true,"text":"潜在机会","expires_in":"short/medium/never"},"protagonist_mood":"主角此刻内心状态一句话"}'
 }
@@ -230,6 +238,7 @@ function render() {
   if (s==='day1'||s==='day-n') { root.innerHTML = rDay(); return }
   if (s==='choice-done') { root.innerHTML = rChoiceDone(); return }
   if (s==='returning')   { root.innerHTML = rReturning(); return }
+  if (s==='ending')     { root.innerHTML = rEnding(); return }
 }
 
 function rInput() {
@@ -254,7 +263,7 @@ function rDay() {
   if (day1.people && day1.people.length) {
     people='<div style="font-size:11px;color:#bbb;letter-spacing:.06em;margin-bottom:10px">今天遇见的人</div>'+day1.people.map(function(p){return '<div class="person-block"><div class="person-name">'+esc(p.name)+'</div><div class="person-role">'+esc(rl[p.role]||p.role)+' · '+esc(p.description)+'</div><div class="person-says">'+esc(p.says)+'</div></div>'}).join('')
   }
-  return '<div class="d1"><div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+' · Day '+dayCount+'</div><div class="day-context">'+esc(day1.context)+'</div><div class="day-scene">'+esc(day1.scene)+'</div>'+people+'<div class="event-block"><div class="event-label">'+esc(day1.event.label)+'</div><div class="event-text">'+esc(day1.event.text)+'</div></div><div class="choice-section"><div class="choice-label">你会怎么做？</div>'+day1.choices.map(function(c,i){return '<button class="choice-btn" onclick="makeChoice('+i+')">'+esc(c.text)+'<div class="choice-sub">'+esc(c.sub)+'</div></button>'}).join('')+'</div><button class="back-btn" style="margin-top:12px" onclick="goBack()">← 换一条路</button></div>'
+  var dots=[1,2,3,4,5,6,7].map(function(d){return '<div style="width:14px;height:3px;border-radius:2px;background:'+(d<=dayCount?st.color:'#e0e0e0')+'"></div>'}).join(''); return '<div class="d1"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="eyebrow" style="color:'+st.color+';margin-bottom:0">'+esc(chosenLife.name)+' · Day '+dayCount+' / 7</div><div style="display:flex;gap:3px">'+dots+'</div></div><div class="day-context">'+esc(day1.context)+'</div><div class="day-scene">'+esc(day1.scene)+'</div>'+people+'<div class="event-block"><div class="event-label">'+esc(day1.event.label)+'</div><div class="event-text">'+esc(day1.event.text)+'</div></div><div class="choice-section"><div class="choice-label">你会怎么做？</div>'+day1.choices.map(function(c,i){return '<button class="choice-btn" onclick="makeChoice('+i+')">'+esc(c.text)+'<div class="choice-sub">'+esc(c.sub)+'</div></button>'}).join('')+'</div><button class="back-btn" style="margin-top:12px" onclick="goBack()">← 换一条路</button></div>'
 }
 
 function rChoiceDone() {
@@ -274,6 +283,37 @@ function rReturning() {
   var tlHtml=''
   if (timeline.length>=1) { tlHtml='<div style="margin-top:2rem"><div style="font-size:10px;color:#bbb;letter-spacing:.08em;margin-bottom:12px">人生时间线</div>'+timeline.slice().reverse().map(function(e){return '<div class="tl-item"><div class="tl-dot" style="background:'+(e.missed?'#ddd':st.color)+'"></div><div class="tl-text"><div class="tl-day">Day '+e.day+'</div>'+esc(e.text)+'</div></div>'}).join('')+'</div>' }
   return '<div class="d1"><div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+'</div><div style="font-size:11px;color:#bbb;margin-bottom:6px">'+td+'</div><div style="font-size:22px;font-weight:500;line-height:1.3;margin-bottom:1.5rem">你不在的时候，<br>发生了一些事。</div>'+happened.map(function(c){return '<div class="away-item"><div class="away-item-label">发生了</div><div class="away-item-text">'+esc(c.text)+'</div></div>'}).join('')+missed.map(function(c){return '<div class="away-item missed"><div class="away-item-label">错过了</div><div class="away-item-text">'+esc(c.text)+'</div><div class="away-item-sub">这件事不会再回来了。</div></div>'}).join('')+(awayResult.day_end_thought?'<div style="margin-top:1.5rem;padding:14px 16px;background:#fff;border:0.5px solid '+st.color+'33;border-radius:12px"><div style="font-size:10px;color:#bbb;margin-bottom:6px;letter-spacing:.06em">昨夜睡前，她想的最后一件事</div><div style="font-size:14px;color:#1a1a1a;font-family:Georgia,serif;line-height:1.7">'+esc(awayResult.day_end_thought)+'</div></div>':'')+tlHtml+'<div class="continue-row"><button class="continue-btn" style="background:'+st.color+'" onclick="enterDayN()">进入 Day '+awayResult.new_day_number+' →</button><button class="back-btn" onclick="goBack()">换一条路 ↩</button></div><button class="export-btn" onclick="exportPDF()">📄 导出这段人生</button></div>'
+}
+
+
+function rEnding() {
+  var ed=STATE.endingData, chosenLife=STATE.chosenLife, timeline=STATE.timeline, seed=STATE.seed
+  var st=LIFE_STYLE[chosenLife.id]||{color:'#555',bg:'#f0f0f0'}
+  var tl=timeline.map(function(e){return '<div class="tl-item"><div class="tl-dot" style="background:'+(e.missed?'#ddd':st.color)+'"></div><div class="tl-text"><div class="tl-day">Day '+e.day+'</div>'+esc(e.text)+'</div></div>'}).join('')
+  return '<div class="d1">'
+    +'<div class="eyebrow" style="color:'+st.color+'">'+esc(chosenLife.name)+' · 人生结局</div>'
+    +'<div style="font-size:22px;font-weight:500;line-height:1.3;margin:8px 0 1.5rem">七天之后，<br>她成为了这样的人。</div>'
+    +'<div style="background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;padding:16px 18px;margin-bottom:14px">'
+    +'<div style="font-size:10px;color:#bbb;letter-spacing:.06em;margin-bottom:10px">结局</div>'
+    +'<div style="font-size:14px;font-family:Georgia,serif;line-height:1.9;color:#1a1a1a;white-space:pre-line">'+esc(ed.ending_scene)+'</div>'
+    +'</div>'
+    +'<div style="background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;padding:16px 18px;margin-bottom:14px">'
+    +'<div style="font-size:10px;color:#bbb;letter-spacing:.06em;margin-bottom:10px">这七天在回答的问题</div>'
+    +'<div style="font-size:13px;font-family:Georgia,serif;line-height:1.85;color:#555;white-space:pre-line">'+esc(ed.proposition_answer)+'</div>'
+    +'</div>'
+    +'<div style="background:'+st.bg+';border:0.5px solid '+st.color+'33;border-radius:14px;padding:16px 18px;margin-bottom:14px">'
+    +'<div style="font-size:10px;color:'+st.color+';letter-spacing:.06em;margin-bottom:8px">心安之处</div>'
+    +'<div style="font-size:16px;font-weight:500;color:'+st.color+';line-height:1.6">'+esc(ed.peace)+'</div>'
+    +'</div>'
+    +'<div style="background:#fff;border:0.5px solid #e5e5e5;border-radius:14px;padding:16px 18px;margin-bottom:20px">'
+    +'<div style="font-size:10px;color:#bbb;letter-spacing:.06em;margin-bottom:8px">她对七天前的自己说</div>'
+    +'<div style="font-size:14px;font-family:Georgia,serif;line-height:1.7;color:#1a1a1a">'+esc(ed.letter)+'</div>'
+    +'</div>'
+    +(tl?'<div style="margin-bottom:20px"><div style="font-size:10px;color:#bbb;letter-spacing:.08em;margin-bottom:12px">这七天走过的路</div>'+tl+'</div>':'')
+    +'<button class="export-btn" style="margin-bottom:10px" onclick="exportPDF()">📄 导出这段人生</button>'
+    +'<button class="submit-btn" style="background:'+st.color+'" onclick="tryAnotherLife()">试试另一条路 →</button>'
+    +'<button class="back-btn" style="width:100%;margin-top:8px;text-align:center" onclick="goToInput()">← 重新开始</button>'
+    +'</div>'
 }
 
 // ── Export ────────────────────────────────────────────────────
@@ -353,7 +393,16 @@ async function makeChoice(idx) {
     setLoadingText('她做出了选择……')
     var result=await callAI(pAftermath(STATE.seed,STATE.chosenLife,STATE.day1,idx,STATE.userInput),1500)
     STATE.aftermath=result
-    if (prev==='day-n') {
+    if (prev==='day-n' && STATE.dayCount===7) {
+      // Final day — generate ending
+      var choice=STATE.day1.choices[idx]
+      pushTimeline({text:choice.text,missed:false})
+      setLoadingText('生成这条人生的结局……')
+      var allChoices=STATE.timeline.map(function(e){return e.text})
+      STATE.endingData=await callAI(pEnding(STATE.seed,STATE.chosenLife,allChoices,choice.text,STATE.userInput),2000)
+      localStorage.removeItem('miva_world')
+      STATE.screen='ending'; render(); window.scrollTo(0,0)
+    } else if (prev==='day-n') {
       var choice=STATE.day1.choices[idx]; setLoadingText('保存这个世界……')
       STATE.worldState=await callAI(pWorldState(STATE.seed,STATE.chosenLife,STATE.day1,choice,result,STATE.userInput),1200)
       pushTimeline({text:choice.text,missed:false}); STATE.leftAt=Date.now(); saveWorld()
@@ -389,10 +438,24 @@ async function continueWorld() { await returnToWorld() }
 async function enterDayN() {
   STATE.screen='loading'; render()
   try {
-    setLoadingText('进入 Day '+STATE.awayResult.new_day_number+'……')
-    STATE.day1=await callAI(pDayN(STATE.seed,STATE.chosenLife,STATE.worldState,STATE.awayResult,STATE.userInput),2000)
-    STATE.dayCount=STATE.awayResult.new_day_number; STATE.screen='day-n'; saveWorld(); render(); window.scrollTo(0,0)
+    var nextDay=STATE.awayResult.new_day_number
+    setLoadingText('进入 Day '+nextDay+'……')
+    var dayPrompt = nextDay===7
+      ? pDay7(STATE.seed,STATE.chosenLife,STATE.worldState,STATE.awayResult,STATE.userInput)
+      : pDayN(STATE.seed,STATE.chosenLife,STATE.worldState,STATE.awayResult,STATE.userInput)
+    STATE.day1=await callAI(dayPrompt,2000)
+    STATE.dayCount=nextDay; STATE.screen='day-n'; saveWorld(); render(); window.scrollTo(0,0)
   } catch(e) { STATE.screen='returning'; render(); setTimeout(function(){alert(e.message)},100) }
+}
+
+function tryAnotherLife() {
+  // Keep seed and userInput, go back to lives screen to pick another path
+  STATE.screen='lives'
+  STATE.chosenLife=null; STATE.day1=null; STATE.chosenChoice=null
+  STATE.aftermath=null; STATE.dayCount=1; STATE.worldState=null
+  STATE.awayResult=null; STATE.endingData=null; STATE.timeline=[]
+  localStorage.removeItem('miva_world')
+  render(); window.scrollTo(0,0)
 }
 
 function goBack() {
