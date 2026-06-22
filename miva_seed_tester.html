@@ -1,0 +1,178 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{max-width:520px;margin:0 auto;padding:1.5rem 1rem 3rem;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}
+.eyebrow{font-size:10px;letter-spacing:.1em;color:var(--color-text-tertiary);margin-bottom:8px}
+.title{font-size:22px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.sub{font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:1.25rem}
+.model-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{padding:4px 11px;border:0.5px solid var(--color-border-secondary);border-radius:20px;font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary)}
+.chip.on{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary)}
+.key-bar{display:flex;gap:8px;margin-bottom:4px}
+.key-bar input{flex:1;padding:8px 11px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;font-size:12px;font-family:monospace;background:var(--color-background-primary);color:var(--color-text-secondary);outline:none}
+.key-bar input:focus{border-color:var(--color-border-primary)}
+.hint{font-size:11px;color:var(--color-text-tertiary);margin-bottom:1rem}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px}
+.field input,.field textarea{width:100%;padding:9px 11px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;font-size:13px;color:var(--color-text-primary);background:var(--color-background-primary);outline:none;font-family:inherit;resize:none}
+.field input:focus,.field textarea:focus{border-color:var(--color-border-primary)}
+.field input::placeholder,.field textarea::placeholder{color:var(--color-text-tertiary)}
+.btn{width:100%;padding:12px;font-size:14px;font-weight:500;border:none;border-radius:10px;background:var(--color-text-primary);color:var(--color-background-primary);cursor:pointer;font-family:inherit;margin-top:6px}
+.btn:active{opacity:.8}
+.err{padding:10px 13px;background:var(--color-background-danger);border:0.5px solid var(--color-border-danger);border-radius:8px;font-size:13px;color:var(--color-text-danger);margin-top:10px;display:none}
+.spinner{width:28px;height:28px;border:2px solid var(--color-border-tertiary);border-top-color:var(--color-text-primary);border-radius:50%;animation:spin .8s linear infinite;margin:3rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:10px}
+.rc-label{font-size:10px;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:6px}
+.rc-text{font-size:14px;color:var(--color-text-primary);line-height:1.7}
+.rc-text.serif{font-family:Georgia,serif;font-size:15px}
+.pattern-item{padding:10px 13px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;margin-bottom:7px;font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.pattern-num{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px}
+.prop-card{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:16px 18px;margin-bottom:10px}
+.prop-label{font-size:10px;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:8px}
+.prop-text{font-size:16px;font-weight:500;color:var(--color-text-primary);line-height:1.5;font-family:Georgia,serif}
+.reset-btn{width:100%;margin-top:8px;padding:10px;font-size:13px;border:0.5px solid var(--color-border-tertiary);border-radius:8px;background:transparent;cursor:pointer;font-family:inherit;color:var(--color-text-secondary)}
+</style>
+
+<div class="wrap">
+<div id="app"></div>
+</div>
+
+<script>
+const MODELS=[
+  {id:'deepseek',label:'DeepSeek',hint:'api.deepseek.com → API Keys'},
+  {id:'qwen',label:'Qwen',hint:'dashscope.aliyuncs.com → API-KEY管理'},
+  {id:'openai',label:'OpenAI',hint:'platform.openai.com → API keys'},
+  {id:'claude',label:'Claude',hint:'console.anthropic.com → API Keys'},
+  {id:'gemini',label:'Gemini',hint:'aistudio.google.com → Get API key'},
+  {id:'ollama',label:'Ollama',hint:'本地运行，无需 Key'},
+]
+let model='deepseek', result=null, loading=false
+
+function getKey(){
+  const inp=document.getElementById('api-key')
+  return (inp?inp.value.trim():'')||localStorage.getItem('miva_key_'+model)||''
+}
+function saveKey(){const k=getKey();if(k)localStorage.setItem('miva_key_'+model,k)}
+
+async function callAI(prompt){
+  const key=getKey(),m=model
+  if(m!=='ollama'&&!key)throw new Error('请先填入 API Key')
+  let url,headers,body
+  if(m==='deepseek'){url='https://api.deepseek.com/chat/completions';headers={'Content-Type':'application/json','Authorization':'Bearer '+key};body={model:'deepseek-chat',messages:[{role:'user',content:prompt}],max_tokens:1200,temperature:0.85}}
+  else if(m==='qwen'){url='https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';headers={'Content-Type':'application/json','Authorization':'Bearer '+key};body={model:'qwen-plus',messages:[{role:'user',content:prompt}],max_tokens:1200,temperature:0.85}}
+  else if(m==='openai'){url='https://api.openai.com/v1/chat/completions';headers={'Content-Type':'application/json','Authorization':'Bearer '+key};body={model:'gpt-4o',messages:[{role:'user',content:prompt}],max_tokens:1200,temperature:0.85}}
+  else if(m==='claude'){url='https://api.anthropic.com/v1/messages';headers={'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};body={model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]}}
+  else if(m==='gemini'){url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key;headers={'Content-Type':'application/json'};body={contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1200,temperature:0.85}}}
+  else if(m==='ollama'){url='http://localhost:11434/api/chat';headers={'Content-Type':'application/json'};body={model:'llama3',messages:[{role:'user',content:prompt}],stream:false}}
+  const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)})
+  if(!r.ok){const t=await r.text().catch(()=>'');throw new Error('API错误 '+r.status+'：'+t.slice(0,120))}
+  const d=await r.json()
+  let raw=''
+  if(m==='claude')raw=d.content?.[0]?.text||''
+  else if(m==='gemini')raw=d.candidates?.[0]?.content?.parts?.[0]?.text||''
+  else if(m==='ollama')raw=d.message?.content||''
+  else raw=d.choices?.[0]?.message?.content||''
+  const clean=raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim()
+  try{return JSON.parse(clean)}catch(e){throw new Error('返回格式异常：\n'+clean.slice(0,200))}
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function selectModel(id){
+  model=id
+  const saved=localStorage.getItem('miva_key_'+id)||''
+  render()
+  setTimeout(()=>{const ki=document.getElementById('api-key');if(ki)ki.value=saved},0)
+}
+
+function render(){
+  document.getElementById('app').innerHTML=loading?renderLoading():result?renderResult():renderForm()
+  if(!result&&!loading){
+    const saved=localStorage.getItem('miva_key_'+model)||''
+    setTimeout(()=>{
+      const ki=document.getElementById('api-key');if(ki&&saved)ki.value=saved
+      const sf=localStorage.getItem('miva_seed_form')
+      if(sf){try{const u=JSON.parse(sf);[['f-name','name'],['f-age','age'],['f-whatif','whatif'],['f-fear','fear'],['f-undone','undone'],['f-family','family']].forEach(([id,k])=>{const el=document.getElementById(id);if(el&&u[k])el.value=u[k]})}catch(e){}}
+    },0)
+  }
+}
+
+function renderForm(){
+  return '<div class="eyebrow">MIVA · SEED TESTER</div>'
+  +'<div class="title">人生种子识别</div>'
+  +'<div class="sub">输入六个问题，看看引擎识别出什么。</div>'
+  +'<div class="model-row">'+MODELS.map(m=>`<div class="chip${model===m.id?' on':''}" onclick="selectModel('${m.id}')">${m.label}</div>`).join('')+'</div>'
+  +'<div class="key-bar"><input type="password" id="api-key" placeholder="'+(model==='ollama'?'无需 Key':'API Key')+'" autocomplete="off"'+(model==='ollama'?' disabled':'')+' /></div>'
+  +'<div class="hint">'+esc(MODELS.find(m=>m.id===model).hint)+'</div>'
+  +'<div class="field"><label>你叫什么</label><input id="f-name" placeholder="名字或称呼"/></div>'
+  +'<div class="field"><label>你现在多大</label><input id="f-age" placeholder="比如：28"/></div>'
+  +'<div class="field"><label>那个"如果当年……"的念头</label><textarea id="f-whatif" rows="2" placeholder="如果当年没有放弃……"></textarea></div>'
+  +'<div class="field"><label>你最害怕的事</label><textarea id="f-fear" rows="2" placeholder="最深层的那种害怕"></textarea></div>'
+  +'<div class="field"><label>一直想做但没做的事</label><textarea id="f-undone" rows="2" placeholder="那件一直搁着的事"></textarea></div>'
+  +'<div class="field"><label>家庭背景（一句话）</label><input id="f-family" placeholder="比如：单亲家庭，母亲独自抚养"/></div>'
+  +'<button class="btn" onclick="handleSubmit()">识别 →</button>'
+  +'<div class="err" id="err"></div>'
+}
+
+function renderLoading(){
+  return '<div class="spinner"></div>'
+  +'<div style="text-align:center;font-size:13px;color:var(--color-text-tertiary)">正在识别……</div>'
+}
+
+function renderResult(){
+  const r=result
+  return '<div class="eyebrow">MIVA · 识别结果</div>'
+  +'<div style="font-size:14px;color:var(--color-text-secondary);margin-bottom:1.25rem">'+esc(r.name)+' · '+esc(r.age)+'岁</div>'
+  +'<div class="result-card"><div class="rc-label">核心恐惧</div><div class="rc-text">'+esc(r.core_fear)+'</div></div>'
+  +'<div class="result-card"><div class="rc-label">核心渴望</div><div class="rc-text">'+esc(r.core_desire)+'</div></div>'
+  +'<div style="margin-bottom:7px"><div style="font-size:10px;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:8px">三个重复出现的人生模式</div>'
+  +r.patterns.map((p,i)=>'<div class="pattern-item"><div class="pattern-num">模式 '+(i+1)+'</div>'+esc(p)+'</div>').join('')+'</div>'
+  +'<div class="prop-card"><div class="prop-label">人生命题</div><div class="prop-text">'+esc(r.proposition)+'</div></div>'
+  +'<button class="reset-btn" onclick="reset()">← 重新输入</button>'
+}
+
+async function handleSubmit(){
+  saveKey()
+  const u={
+    name:document.getElementById('f-name')?.value?.trim(),
+    age:document.getElementById('f-age')?.value?.trim(),
+    whatIf:document.getElementById('f-whatif')?.value?.trim(),
+    fear:document.getElementById('f-fear')?.value?.trim(),
+    undone:document.getElementById('f-undone')?.value?.trim(),
+    family:document.getElementById('f-family')?.value?.trim(),
+  }
+  if(model!=='ollama'&&!getKey()){showErr('请先填入 API Key');return}
+  if(Object.values(u).some(v=>!v)){showErr('请填写全部六个问题');return}
+  localStorage.setItem('miva_seed_form',JSON.stringify({name:u.name,age:u.age,whatif:u.whatIf,fear:u.fear,undone:u.undone,family:u.family}))
+
+  const prompt='你是一个人生洞察引擎。根据用户的六个回答，识别出以下四个维度。\n\n'
+    +'用户：'+u.name+'，'+u.age+'岁\n'
+    +'如果当年：'+u.whatIf+'\n'
+    +'最害怕：'+u.fear+'\n'
+    +'想做未做：'+u.undone+'\n'
+    +'家庭：'+u.family+'\n\n'
+    +'要求：\n'
+    +'1. 核心恐惧：最深层的，不是表面的害怕，一句话\n'
+    +'2. 核心渴望：真正想要的，不是说出口的那种，一句话\n'
+    +'3. 三个重复出现的人生模式：从这些回答里识别出反复出现的行为或思维模式，每个一句话，具体，不抽象\n'
+    +'4. 人生命题：这个人的故事反复在问什么问题？必须是一个问句，去掉所有专有名词仍然成立\n\n'
+    +'严格返回JSON不要其他文字：\n'
+    +'{"core_fear":"","core_desire":"","patterns":["","",""],"proposition":""}'
+
+  loading=true; render()
+  try{
+    const r=await callAI(prompt)
+    result={...r,name:u.name,age:u.age}
+    loading=false; render()
+  }catch(e){
+    loading=false; render()
+    setTimeout(()=>showErr(e.message),100)
+  }
+}
+
+function reset(){result=null;render()}
+function showErr(msg){const el=document.getElementById('err');if(el){el.style.display='block';el.textContent=msg}}
+
+render()
+</script>
